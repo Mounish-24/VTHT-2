@@ -138,14 +138,25 @@ export default function StudentDashboard() {
 
 
 
-    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || !e.target.files[0]) return;
+        const file = e.target.files[0];
 
-        if (e.target.files && e.target.files[0]) {
+        // Preview immediately
+        setProfilePic(URL.createObjectURL(file));
 
-            setProfilePic(URL.createObjectURL(e.target.files[0]));
-
+        try {
+            const form = new FormData();
+            form.append("file", file);
+            const userId = localStorage.getItem("user_id");
+            const res = await axios.post(`${API_URL}/student/${userId}/photo`, form, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            // Persisted URL from server
+            setProfilePic(res.data.profile_pic);
+        } catch (error) {
+            console.error("Upload failed", error);
         }
-
     };
 
 

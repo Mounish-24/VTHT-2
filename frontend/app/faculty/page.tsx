@@ -9,11 +9,29 @@ import { BookOpen, ChevronRight, Megaphone, Beaker } from 'lucide-react';
 
 export default function FacultyDashboard() {
     const [faculty, setFaculty] = useState<any>(null);
+    const [profilePic, setProfilePic] = useState<string | null>(null);
     const [theoryCourses, setTheoryCourses] = useState<any[]>([]);
     const [labCourses, setLabCourses] = useState<any[]>([]);
     const [announcement, setAnnouncement] = useState({ title: '', content: '' });
     const [message, setMessage] = useState('');
     const router = useRouter();
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || !e.target.files[0]) return;
+        const file = e.target.files[0];
+        setProfilePic(URL.createObjectURL(file));
+        try {
+            const form = new FormData();
+            form.append("file", file);
+            const userId = localStorage.getItem("user_id");
+            const res = await axios.post(`${API_URL}/faculty/${userId}/photo`, form, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            setProfilePic(res.data.profile_pic);
+        } catch (error) {
+            console.error("Upload failed", error);
+        }
+    };
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -30,6 +48,7 @@ export default function FacultyDashboard() {
                 // 1. Fetch faculty profile
                 const res = await axios.get(`${API_URL}/faculty/${userId}`);
                 setFaculty(res.data);
+                setProfilePic(res.data.profile_pic || `https://ui-avatars.com/api/?name=${res.data.name}&background=random`);
 
                 // 2. Courses Data - Splitting Theory and Labs
                 // In a real app, this comes from your backend. 
@@ -88,8 +107,12 @@ export default function FacultyDashboard() {
                     {/* LEFT COLUMN: Profile Card */}
                     <div className="bg-white p-6 rounded-lg shadow-md h-fit border-t-4 border-blue-900">
                         <div className="flex flex-col items-center mb-4">
-                            <div className="w-24 h-24 bg-blue-900 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-inner">
-                                {faculty.name.charAt(0)}
+                            <div className="relative group w-24 h-24 mb-4">
+                                <img src={profilePic || faculty.profile_pic || `https://ui-avatars.com/api/?name=${faculty.name}&background=random`} alt="Profile" className="w-24 h-24 rounded-full object-cover border-2 border-white shadow-inner" />
+                                <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition cursor-pointer text-white">
+                                    <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+                                    <span className="text-xs font-bold">Change</span>
+                                </label>
                             </div>
                             <h2 className="text-xl font-bold text-blue-900 text-center">{faculty.name}</h2>
                         </div>
