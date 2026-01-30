@@ -17,47 +17,7 @@ for db_file in (project_root_db, backend_db):
         except Exception as e:
             print(f"Could not remove DB file {db_file}: {e}")
 
-models.Base.metadata.create_all(bind=engine)
-
-# If the DB file could not be removed earlier (locked by another process),
-# ensure missing columns are added and existing rows get default avatars.
-try:
-    import sqlite3
-    db_file_path = project_root_db if os.path.exists(project_root_db) else (backend_db if os.path.exists(backend_db) else None)
-    if db_file_path:
-        conn_sql = sqlite3.connect(db_file_path)
-        cur = conn_sql.cursor()
-
-        # Ensure faculty.profile_pic exists
-        try:
-            cols = [r[1] for r in cur.execute("PRAGMA table_info(faculty)").fetchall()]
-            if 'profile_pic' not in cols:
-                cur.execute("ALTER TABLE faculty ADD COLUMN profile_pic VARCHAR")
-                print("Added profile_pic column to faculty table - seed.py")
-        except Exception as e:
-            print(f"Faculty schema check/alter failed: {e}")
-
-        # Ensure students.profile_pic exists
-        try:
-            cols = [r[1] for r in cur.execute("PRAGMA table_info(students)").fetchall()]
-            if 'profile_pic' not in cols:
-                cur.execute("ALTER TABLE students ADD COLUMN profile_pic VARCHAR")
-                print("Added profile_pic column to students table - seed.py")
-        except Exception as e:
-            print(f"Student schema check/alter failed: {e}")
-
-        # Populate missing profile_pic values with generated avatars
-        try:
-            cur.execute("UPDATE faculty SET profile_pic = 'https://ui-avatars.com/api/?name=' || REPLACE(name,' ','%20') || '&background=random' WHERE profile_pic IS NULL")
-            cur.execute("UPDATE students SET profile_pic = 'https://ui-avatars.com/api/?name=' || REPLACE(name,' ','%20') || '&background=random' WHERE profile_pic IS NULL")
-            conn_sql.commit()
-            print("Filled default profile_pic for existing rows where NULL - seed.py")
-        except Exception as e:
-            print(f"Could not populate default profile_pic values: {e}")
-
-        conn_sql.close()
-except Exception as e:
-    print(f"Schema patch check skipped: {e}")
+models.Base.metadata.create_all(bind=engine) 
 
 db = SessionLocal()
 
@@ -113,13 +73,7 @@ for f in faculty_data:
         password = parse_date_to_password(f["doj"])
         role = "HOD" if "HOD" in f["designation"] else "Faculty"
         db.add(models.User(id=f["id"], role=role, password=password))
-        db.add(models.Faculty(
-            staff_no=f["id"],
-            name=f["name"],
-            designation=f["designation"],
-            doj=f["doj"],
-            profile_pic=f"https://ui-avatars.com/api/?name={f['name']}&background=random"
-        ))
+        db.add(models.Faculty(staff_no=f["id"], name=f["name"], designation=f["designation"], doj=f["doj"]))
 
 # --- 3. CURRICULUM ---
 curriculum_data = [

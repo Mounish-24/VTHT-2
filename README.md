@@ -8,20 +8,21 @@
 
 ### Backend
 1. Navigate to the root directory.
-2. Install dependencies:
-   ```bash
-   pip install -r backend/requirements.txt
-   ```
-3. Seed the database:
-   ```bash
-
+2. Create & activate a virtual environment (Windows PowerShell):
+   ```powershell
+   python -m venv venv
    .\venv\Scripts\Activate.ps1
-
-   
-    python -m backend.seed
    ```
-4. Run the server:
-   ```bash
+3. Install dependencies into the active venv:
+   ```powershell
+   python -m pip install -r backend/requirements.txt
+   ```
+4. Seed the database (development only — this **removes and recreates** the local DB):
+   ```powershell
+   python -m backend.seed
+   ```
+5. Run the server:
+   ```powershell
    uvicorn backend.main:app --reload
    ```
    The API will be available at `http://localhost:8000`.

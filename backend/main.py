@@ -243,12 +243,54 @@ def get_faculty(staff_no: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Faculty not found")
     return faculty
 
+
+@app.post("/faculty/{staff_no}/photo")
+async def upload_faculty_photo(staff_no: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    faculty = db.query(models.Faculty).filter(models.Faculty.staff_no == staff_no).first()
+    if not faculty:
+        raise HTTPException(status_code=404, detail="Faculty not found")
+
+    filename = f"{staff_no}_{file.filename}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        logger.error(f"Failed saving file: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save file")
+
+    file_url = f"http://localhost:8000/static/{filename}"
+    faculty.profile_pic = file_url
+    db.commit()
+    return {"profile_pic": file_url} 
+
 @app.get("/student/{roll_no}", response_model=schemas.Student)
 def get_student(roll_no: str, db: Session = Depends(get_db)):
     student = db.query(models.Student).filter(models.Student.roll_no == roll_no).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     return student
+
+
+@app.post("/student/{roll_no}/photo")
+async def upload_student_photo(roll_no: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    student = db.query(models.Student).filter(models.Student.roll_no == roll_no).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    filename = f"{roll_no}_{file.filename}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        logger.error(f"Failed saving file: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save file")
+
+    file_url = f"http://localhost:8000/static/{filename}"
+    student.profile_pic = file_url
+    db.commit()
+    return {"profile_pic": file_url} 
 
 @app.get("/courses", response_model=List[schemas.Course])
 def get_courses(semester: Optional[int] = None, db: Session = Depends(get_db)):

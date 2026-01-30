@@ -27,6 +27,7 @@ class FacultyBase(BaseModel):
     name: str
     designation: str
     doj: str
+    profile_pic: Optional[str] = None
 
 class Faculty(FacultyBase):
     class Config:
@@ -40,6 +41,7 @@ class StudentBase(BaseModel):
     semester: int
     cgpa: float
     attendance_percentage: float
+    profile_pic: Optional[str] = None
 
 class Student(StudentBase):
     class Config:
